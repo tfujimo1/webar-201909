@@ -1,6 +1,6 @@
 /* THREE.js ARToolKit integration */
 
-(function() {
+;(function() {
 	var integrate = function() {
 		/**
 			Helper for setting up a Three.js AR scene using the device camera as input.
@@ -114,7 +114,7 @@
 			var scene = new THREE.Scene();
 			var camera = new THREE.Camera();
 			camera.matrixAutoUpdate = false;
-			camera.projectionMatrix.elements.set(this.getCameraMatrix());
+			setProjectionMatrix(camera.projectionMatrix, this.getCameraMatrix());
 
 			scene.add(camera);
 
@@ -285,7 +285,7 @@
 
 				}
 				if (obj) {
-					obj.matrix.elements.set(ev.data.matrix);
+					setProjectionMatrix(obj.matrix, ev.data.matrixGL_RH);
 					obj.visible = true;
 				}
 			});
@@ -296,11 +296,19 @@
 			this.addEventListener('getNFTMarker', function(ev) {
 				var marker = ev.data.marker;
 				var obj;
+				var test;
 
 				obj = this.threeNFTMarkers[ev.data.marker.id];
-
 				if (obj) {
-					obj.matrix.elements.set(ev.data.matrix);
+				    test = ev.data.matrixGL_RH;
+				    console.log('ev.data.matrixGL_RH');
+				    console.log(ev.data.matrixGL_RH);
+					obj.matrix.fromArray(ev.data.matrixGL_RH);
+					obj.visible = true;
+				} else {
+				    console.log('test');
+				    console.log(test);
+					obj.matrix.fromArray(test);
 					obj.visible = true;
 				}
 			});
@@ -311,7 +319,7 @@
 			this.addEventListener('getMultiMarker', function(ev) {
 				var obj = this.threeMultiMarkers[ev.data.multiMarkerId];
 				if (obj) {
-					obj.matrix.elements.set(ev.data.matrix);
+					obj.matrix.fromArray(ev.data.matrixGL_RH);
 					obj.visible = true;
 				}
 			});
@@ -326,7 +334,7 @@
 				var obj = this.threeMultiMarkers[marker];
 				if (obj && obj.markers && obj.markers[subMarkerID]) {
 					var sub = obj.markers[subMarkerID];
-					sub.matrix.elements.set(ev.data.matrix);
+					sub.matrix.fromArray(ev.data.matrixGL_RH);
 					sub.visible = (subMarker.visible >= 0);
 				}
 			});
@@ -353,7 +361,16 @@
 		};
 
 	};
-
+	/**
+	 * Helper Method for Three.js compatibility
+	 */
+	var setProjectionMatrix = function(projectionMatrix, value) {
+		if (typeof projectionMatrix.elements.set === "function") {
+			projectionMatrix.elements.set(value);
+		} else {
+			projectionMatrix.elements = [].slice.call(value);
+		}
+	};
 
 	var tick = function() {
 		if (window.ARController && window.THREE) {
@@ -363,7 +380,7 @@
 			}
 		} else {
 			setTimeout(tick, 50);
-		}			
+		}
 	};
 
 	tick();
