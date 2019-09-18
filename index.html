@@ -1,185 +1,168 @@
-<!doctype html>
 <html>
+<head>
+<title>test</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
+<style>
+html,body {
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	text-align: center;
+	overflow-x: hidden;
+}
+.portrait canvas {
+	transform-origin: 0 0;
+	transform: rotate(-90deg) translateX(-100%);
+}
+.desktop canvas {
+ 	transform: scale(-1, 1);
+}
+</style>
+</head>
+<body>
 
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>JSARToolKit5 examples</title>
-		<style>
-			html, body {
-				background: #fff;
-				color: #000;
-				font-family: sans-serif;
+<h1>NFT marker example with Three.js</h1>
+
+<script async src="artoolkit.min.js"></script>
+<script async src="three.min.js"></script>
+<script async src="artoolkit.three.js"></script>
+
+<script>
+
+window.ARThreeOnLoad = function() {
+
+	ARController.getUserMediaThreeScene({facingMode: { exact: "environment" }, maxARVideoSize: 320, cameraParam: 'camera_para-iPhone 5 rear 640x480 1.0m.dat',
+	onSuccess: function(arScene, arController, arCamera) {
+
+		document.body.className = arController.orientation;
+
+		var renderer = new THREE.WebGLRenderer({antialias: true});
+		if (arController.orientation === 'portrait') {
+			var w = (window.innerWidth / arController.videoHeight) * arController.videoWidth;
+			var h = window.innerWidth;
+			renderer.setSize(w, h);
+			renderer.domElement.style.paddingBottom = (w-h) + 'px';
+		} else {
+			if (/Android|mobile|iPad|iPhone/i.test(navigator.userAgent)) {
+				renderer.setSize(window.innerWidth, (window.innerWidth / arController.videoWidth) * arController.videoHeight);
+			} else {
+				renderer.setSize(arController.videoWidth, arController.videoHeight);
+				document.body.className += ' desktop';
 			}
-			.example {
-				display: inline-block;
-				width: 260px;
-				min-height: 120px;
-				padding: 20px;
-				border: 1px solid #ccc;
-				vertical-align: top;
-				margin: 10px;
-			}
-		</style>
-	</head>
+		}
 
-	<body>
+		document.body.insertBefore(renderer.domElement, document.body.firstChild);
 
-		<h2>Three.js examples</h2>
+		var rotationV = 0;
+		var rotationTarget = 0;
 
-		<div class="example">
-			<a href="barcode_threejs.html">
-				Barcode tracking
-			</a>
-			<p>Uses device camera.
-			<p>Use <a href="https://github.com/artoolkit/artoolkit5/blob/master/doc/patterns/Matrix%20code%203x3%20(72dpi)/20.png">3x3 marker id 20</a>
-		</div>
+		renderer.domElement.addEventListener('click', function(ev) {
+			ev.preventDefault();
+			rotationTarget += 1;
+		}, false);
 
-		<div class="example">
-			<a href="pattern_threejs.html">
-				Pattern marker tracking
-			</a>
-			<p>Uses device camera.
-			<p>Use <a href="https://github.com/artoolkit/artoolkit5/blob/master/doc/patterns/Hiro%20pattern.pdf">Hiro pattern</a> and <a href="https://github.com/artoolkit/artoolkit5/blob/master/doc/patterns/Kanji%20pattern.pdf">Kanji pattern</a>
-		</div>
+		var sphere = new THREE.Mesh(
+			new THREE.SphereGeometry(0.5, 8, 8),
+			new THREE.MeshNormalMaterial()
+		);
+		sphere.material.shading = THREE.FlatShading;
+		sphere.position.z = 40;
+		sphere.position.x = 80;
+		sphere.position.y = 80;
+		sphere.scale.set(80,80,80);
 
-		<div class="example">
-			<a href="pattern_and_barcode_threejs.html">
-				Mixed pattern and barcode marker tracking
-			</a>
-			<p>Uses device camera.
-			<p>Use
-			<a href="https://github.com/artoolkit/artoolkit5/blob/master/doc/patterns/Matrix%20code%203x3%20(72dpi)/5.png">3x3 marker id 5</a>,
-			<a href="https://github.com/artoolkit/artoolkit5/blob/master/doc/patterns/Matrix%20code%203x3%20(72dpi)/20.png">3x3 marker id 20</a>,
-			<a href="https://github.com/artoolkit/artoolkit5/blob/master/doc/patterns/Hiro%20pattern.pdf">Hiro pattern</a> and <a href="https://github.com/artoolkit/artoolkit5/blob/master/doc/patterns/Kanji%20pattern.pdf">Kanji pattern</a>
-		</div>
+		var torus = new THREE.Mesh(
+			new THREE.TorusGeometry(0.3, 0.2, 8, 8),
+			new THREE.MeshNormalMaterial()
+		);
+		torus.material.shading = THREE.FlatShading;
+		torus.position.z = 0.5;
+		torus.rotation.x = Math.PI/2;
 
-		<div class="example">
-			<a href="multimarker_barcode_threejs.html">
-				Barcode multimarker tracking
-			</a>
-			<p>Uses device camera.
-			<p>Use <a href="https://github.com/artoolkit/artoolkit5/blob/master/doc/patterns/Multi%20pattern%204x3%20(A4).pdf">Multi pattern 4x3</a>
-		</div>
+		arController.loadNFTMarker('DataNFT/marker', function(markerId) {
+			var markerRoot = arController.createThreeNFTMarker(markerId);
+			markerRoot.add(sphere);
+			arScene.scene.add(markerRoot);
+		});
 
-		<div class="example">
-			<a href="multimarker_pattern_threejs.html">
-				Pattern multimarker tracking
-			</a>
-			<p>Uses device camera.
-			<p>Use <a href="https://github.com/artoolkit/artoolkit5/blob/master/doc/patterns/Multi%20pattern%20(template%2C%20A4).pdf">Multi pattern (template)</a>
-		</div>
+		// arController.loadMarker('Data/patt.kanji', function(markerId) {
+		// 	var markerRoot = arController.createThreeMarker(markerId);
+		// 	markerRoot.add(torus);
+		// 	arScene.scene.add(markerRoot);
+		// });
 
-		<div class="example">
-			<a href="threejs_from_scratch.html">
-				Three.js example without helper API
-			</a>
-			<p>Uses pre-recorded video.
-			<p>Not interactive. Draws a cube on top of last detected marker square.
-		</div>
+		var tick = function() {
+			arScene.process();
 
+			rotationV += (rotationTarget - sphere.rotation.z) * 0.05;
+			sphere.rotation.z += rotationV;
+			torus.rotation.y += rotationV;
+			rotationV *= 0.8;
 
+			arScene.renderOn(renderer);
+			requestAnimationFrame(tick);
+		};
 
-		<h2>NFT Examples</h2>
+		tick();
 
-		<div class="example">
-			<a href="nft_init_test.html">
-				nft init test
-			</a>
-			<p>short description
-			<p>goes here
-		</div>
+	}});
 
-		<div class="example">
-			<a href="nft_threejs.html">
-				nft threejs
-			</a>
-			<p>Using NFT with three.js (and no webworker)
-			<p>Use this <a href="https://github.com/artoolkit/artoolkit5/blob/master/doc/Marker%20images/pinball.jpg">Pinball image</a>
-				as marker.
-		</div>
+	delete window.ARThreeOnLoad;
 
-		<div class="example">
-			<a href="nft_worker_init_test.html">
-				nft worker init test
-			</a>
-			<p>short description
-			<p>goes here
-		</div>
+};
 
-		<div class="example">
-			<a href="nft_worker_rtc_test.html">
-				nft worker rtc test
-			</a>
-			<p>short description
-			<p>goes here
-		</div>
+if (window.ARController && ARController.getUserMediaThreeScene) {
+	ARThreeOnLoad();
+}
 
-		<div class="example">
-			<a href="nft_worker_threejs.html">
-				nft worker threejs
-			</a>
-			<p>Using NFT with WebWorker with three.js
-			<p>Use this <a href="https://github.com/artoolkit/artoolkit5/blob/master/doc/Marker%20images/pinball.jpg">Pinball image</a>
-				as marker.
-		</div>
+class FpsCalculator {
+  constructor() {
+    this._isRunning = false;
+    this._beginTime = Date.now();
+    this._prevTime = this._beginTime;
+    this._frames = 0;
+  }
+  start() {
+    if (this._isRunning) {
+      return null;
+    }
 
+    this._beginTime = Date.now();
+    this._prevTime = this._beginTime;
+    this._frames = 0;
 
-		<h2>Canvas debug examples</h2>
+    this._isRunning = true;
+    const loop = () => {
+      if (!this._isRunning) {
+        return null;
+      }
+      this._update();
+      requestAnimationFrame(loop);
+    }
+    loop();
+  }
+  stop() {
+    this._isRunning = false;
+    this._frames = 0;
+  }
+  _update() {
+    this._frames++;
+    let prevTime = this._prevTime;
+    let time = Date.now();
 
-		<div class="example">
-			<a href="simple_image.html">
-				Image debug marker detection
-			</a>
-			<p>Runs AR marker detection on images.
-			<p>Not interactive.
-		</div>
+    if (time > prevTime + 1000) {
+      console.log((this._frames * 1000) / (time - prevTime));
+      this._prevTime = time;
+      this._frames = 0;
+    }
 
-		<div class="example">
-			<a href="simple_video.html">
-				Video debug marker detection
-			</a>
-			<p>Uses pre-recorded video.
-			<p>Not interactive.
-		</div>
+    this._beginTime = time;
+  }
+}
+const calculator = new FpsCalculator();
+calculator.start();
 
-		<div class="example">
-			<a href="simple_rtc.html">
-				Camera debug marker detection
-			</a>
-			<p>Uses device camera.
-			<p>Displays detected potential marker squares in debug output.
-		</div>
+</script>
 
-		<h2>Wasm esamples</h2>
-
-		<div class="example">
-			<a href="simple_image_wasm.html">
-				Image debug marker detection with Wasm
-			</a>
-			<p>Runs AR marker detection on images (with Wasm).
-			<p>Not interactive.
-		</div>
-
-		<div class="example">
-			<a href="simple_video_wasm.html">
-				Video debug marker detection with Wasm
-			</a>
-			<p>Uses pre-recorded video (with Wasm). 
-			<p>Not interactive.
-		</div>
-
-		<div class="example">
-			<a href="nft_threejs_wasm.html">
-				nft with threejs and Wasm
-			</a>
-			<p>Using NFT with three.js and Wasm (and no webworker)
-			<p>Use this <a href="https://github.com/artoolkit/artoolkit5/blob/master/doc/Marker%20images/pinball.jpg">Pinball image</a>
-				as marker.
-		</div>
-
-
-
-	</body>
-
+</body>
 </html>
