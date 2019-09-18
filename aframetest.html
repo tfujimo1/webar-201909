@@ -10,7 +10,7 @@
         <a-asset-item id="CesiumMan" src="Duck.glb"></a-asset-item>
     </a-assets>
 <a-marker preset="hiro">
-<!-- <a-plane position="0 0 0" rotation="-90 0 0" width="2" height="2" color="#7BC8A4" shadow> -->
+<a-plane position="0 0 0" rotation="-90 0 0" width="2" height="2" color="#999" shadow opacity="0.0">
     <a-plane position="0 0 2" rotation="0 -90 -90" width="1.4" height="0.3" color="#888" side="double"
                 animation="property: rotation; to: 360 -90 -90; loop: true; dur: 3000; easing: linear;">
             <a-text value="Welcome !" position="0 0 0.01" align="center" color="#FF0"></a-text>
@@ -18,7 +18,7 @@
             <a-animation></a-animation>
     </a-plane> 
     <a-entity gltf-model="#CesiumMan" scale="1 1 1" rotation="0 -90 -90"></a-entity>
-<!-- </a-plane> -->
+</a-plane>
 </a-marker>
 
   <a-camera position="0 0.5 2.8"></a-camera>
