@@ -30,6 +30,35 @@ html,body {
 <script async src="artoolkit.three.js"></script>
 
 <script>
+
+  /**
+   * gltf loader Promise版
+   */
+  function loadGltf(url) {
+    return new Promise((resolve, reject) => {
+      var gltf_loader = new THREE.GLTFLoader();
+      gltf_loader.load(
+        url,
+        gltf => resolve(gltf), // onLoad
+        null, // onProgress
+        error => reject(error) // onError
+      );
+    });
+  }
+
+  /**
+   * NFT loader Promise版
+   */
+  function loadNFTMarker(url) {
+    return new Promise((resolve, reject) => {
+      arController.loadNFTMarker(
+        url,
+        markerId => resolve(markerId),
+        () => reject('error')
+      );
+    });
+  }
+
     window.addEventListener('artoolkit-loaded', () => {
       window.ARThreeOnLoad = function() {
       	ARController.getUserMediaThreeScene({maxARVideoSize: 320, cameraParam: 'camera_para-iPhone 5 rear 640x480 1.0m.dat',
@@ -51,67 +80,24 @@ html,body {
       		}
       		document.body.insertBefore(renderer.domElement, document.body.firstChild);
 
-      		// ジオメトリの作成
-            const geometry = new THREE.PlaneGeometry(25, 25);
+          Promise.all([
+            loadGltf("Duck.glb"),
+            loadNFTMarker("DataNFT/marker")
+          ])
+          .then(([gltf, markerId]) => {
+            markerRoot = arController.createThreeNFTMarker(markerId);
+            markerRoot.add(gltf);
+            arScene.scene.add(markerRoot);
+          }).catch((reasons) => {
+            alert("データ読み込みエラー");
+          });
 
-            // 画像ファイル名
-            var pictures = [
-            "test1.jpg",
-            "test2.jpg",
-            "test3.jpg"
-            ]
-
-            // マテリアルの作成
-            var material = [];
-            for(var p of pictures){
-                material.push(new THREE.MeshBasicMaterial({map:THREE.ImageUtils.loadTexture(p)}));
-            }
-
-            // メッシュの作成
-            var mesh = [];
-            for(var m of material){
-                var obj = new THREE.Mesh(geometry, m);
-                obj.position.z = 0;
-                obj.position.x = 0;
-                obj.position.y = 0;
-                obj.scale.set(1, 1, 1);
-                mesh.push(obj);
-            }
-
-            // シーンの追加
-            function addScene(){
-                markerRoot.add(mesh[0]);
-                arScene.scene.add(markerRoot);
-            }
-
-            // シーンの削除
-            function delScene(){
-                markerRoot.remove(markerRoot.children[0]);
-            }
-
-            // マーカーの読み込み
-            var markerRoot;
-            arController.loadNFTMarker('DataNFT/marker', function(markerId) {
-                markerRoot = arController.createThreeNFTMarker(markerId);
-                addScene();
-            });
-
-            // マーカーの追従と3Dオブジェクトの描画
-            var count = 0;
-            const tri = 30;
-            var tick = function() {
-                    count++;
-                    if(count === tri){
-                    mesh.push(mesh[0]);
-                    mesh.shift();
-                    delScene();
-                    addScene();
-                    count = 0;
-                }
-                arScene.process();
-                arScene.renderOn(renderer);
-                requestAnimationFrame(tick);
-            };
+          // マーカーの追従と3Dオブジェクトの描画
+          var tick = function() {
+              arScene.process();
+              arScene.renderOn(renderer);
+              requestAnimationFrame(tick);
+          };
       		tick();
       	}});
       	delete window.ARThreeOnLoad;
