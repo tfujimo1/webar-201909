@@ -27,11 +27,12 @@ html,body {
 
 </script>
 <script src="artoolkitNft_wasm.js"></script>
-<script async src="three.min.js"></script>
-<script async src="artoolkit.three.js"></script>
+<script src="three.min.js"></script>
+<script src="GLTFLoader.js"></script>
+<script src="artoolkit.three.js"></script>
 
 <script>
-
+  // import GLTFLoader from 'node_modules/three/examples/jsm/loaders/GLTFLoader';
   /**
    * gltf loader Promise版
    */
@@ -40,7 +41,7 @@ html,body {
       var gltf_loader = new THREE.GLTFLoader();
       gltf_loader.load(
         url,
-        gltf => resolve(gltf), // onLoad
+        gltf => resolve(gltf.scene), // onLoad
         null, // onProgress
         error => reject(error) // onError
       );
@@ -50,7 +51,7 @@ html,body {
   /**
    * NFT loader Promise版
    */
-  function loadNFTMarker(url) {
+  function loadNFTMarker(arController, url) {
     return new Promise((resolve, reject) => {
       arController.loadNFTMarker(
         url,
@@ -81,16 +82,24 @@ html,body {
       		}
       		document.body.insertBefore(renderer.domElement, document.body.firstChild);
 
+          const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.7);
+          const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 0.5);
+          directionalLight.position.set(0.5, 1, 0)
+          arScene.scene.add(ambientLight);
+          arScene.scene.add(directionalLight);
+
           Promise.all([
             loadGltf("Duck.glb"),
-            loadNFTMarker("DataNFT/marker")
+            loadNFTMarker(arController, "DataNFT/marker")
           ])
           .then(([gltf, markerId]) => {
             markerRoot = arController.createThreeNFTMarker(markerId);
+            gltf.position.set(0,0,0);
+            gltf.scale.set(100,100,100);
             markerRoot.add(gltf);
             arScene.scene.add(markerRoot);
-          }).catch((reasons) => {
-            alert("データ読み込みエラー");
+          }).catch((reason) => {
+            alert("データ読み込みエラー\n" + reason.message);
           });
 
           // マーカーの追従と3Dオブジェクトの描画
